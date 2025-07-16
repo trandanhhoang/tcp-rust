@@ -1,0 +1,8 @@
+[package]
+name = "tcp-rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tun = "0.8.3"
+etherparse = "0.18.0"
