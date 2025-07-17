@@ -136,6 +136,20 @@ step 11: For the first time, I still think I need to parse 4 byte but no, librar
 
 step 12: Now we know all data is header + payload of IP, let explore http://www.faqs.org/rfcs/rfc791.html (@see ip-protocol.md)
 
+step 13: Try to read header of IP and TCP, got things below when use netcat `nc 10.0.0.1 80`
+
+```txt
+Received packet with header:Ipv4Header { dscp: IpDscp(0), ecn: NotEct, total_len: 64,
+identification: 0, dont_fragment: true, more_fragments: false, fragment_offset: IpFragOffset(0),
+\time_to_live: 64, protocol: 6 (TCP - Transmission Control), header_checksum: 9911,
+source: [10, 0, 0, 1], destination: [10, 0, 0, 1], options: [] }, and rest:
+[248, 6, 0, 80, 191, 200, 29, 20, 0, 0, 0, 0, 176, 2, 255, 255, 144, 176, 0, 0, 2, 4,
+5, 180, 1, 3, 3, 6, 1, 1, 8, 10, 202, 234, 242, 43, 0, 0, 0, 0, 4, 2, 0, 0]
+
+TCP Header: TcpHeaderSlice { slice: [248, 6, 0, 80, 191, 200, 29, 20, 0, 0, 0, 0, 176, 2,
+255, 255, 144, 176, 0, 0, 2, 4, 5, 180, 1, 3, 3, 6, 1, 1, 8, 10, 202, 234, 242, 43, 0, 0,
+0, 0, 4, 2, 0, 0] }
+```
 
 
 

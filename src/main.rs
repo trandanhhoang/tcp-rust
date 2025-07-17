@@ -1,6 +1,5 @@
+use std::io::{self, Read};
 use tun::{AbstractDevice, Configuration};
-use core::convert::TryInto;
-use std::{io::{self, Read}};
 
 fn main() -> io::Result<()> {
     let mut config = Configuration::default();
@@ -21,11 +20,35 @@ fn main() -> io::Result<()> {
 
     const MTU: usize = 1500; // maximum transmission unit
     let mut buf = [0u8; MTU];
-    
+
     loop {
         let nbytes = tun_device.read(&mut buf).unwrap();
 
-        println!("read {}, bytes {:x?}", nbytes, &buf[..nbytes]);
+        match etherparse::Ipv4Header::from_slice(&buf[..nbytes]) {
+            Ok((header, rest)) => {
+                println!(
+                    "Received packet with header:{:?}, and rest: {:?}",
+                    header, rest
+                );
+
+                if header.protocol != etherparse::IpNumber::TCP {
+                    println!("Not a TCP packet, skipping...");
+                    continue;
+                }
+
+                match etherparse::TcpHeaderSlice::from_slice(&buf[header.header_len()..nbytes]) {
+                    Ok(tcp_header) => {
+                        println!("TCP Header: {:?}", tcp_header);
+                    }
+                    Err(e) => {
+                        println!("Failed to parse TCP header: {}", e);
+                        continue;
+                    }
+                }
+            }
+            Err(e) => {
+                println!("Failed to parse IPv4 header: {}", e);
+            }
+        }
     }
-    Ok(())
 }
