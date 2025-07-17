@@ -1,5 +1,7 @@
 # Prerequisites
 - MacOS M1 Pro
+  
+- video: https://www.youtube.com/watch?v=bzja9fQWzdA
 
 # set up from scratch
 
@@ -7,7 +9,7 @@
 cargo new --bin tcp-rust
 ```
 
-- add tun-tap in dependencies -> but it's don't work on MacOs
+- step 1: add tun-tap dependencies for reading network packet manually
 
 ```bash
 cargo build
@@ -27,8 +29,9 @@ Failed to create a TUN device: Os { code: 2, kind: NotFound, message: "No such f
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 ```
 
-# Time to run
-step 1: Change to [tun](https://docs.rs/tun/latest/tun/), then run bash below
+tun-tap only work in linux (@see `utun-macos.md`)
+
+step 2: Change to [tun](https://docs.rs/tun/latest/tun/), then run bash below
 
 ```bash
 cargo clean
@@ -36,17 +39,19 @@ cargo build --release
 cargo run
 ```
 
-First error: name "utun"
+error: name "utun" 
 ```rust
 Custom { kind: Other, error: ParseNum(ParseIntError { kind: Empty }) }
 ```
+dependencies need `utun + number`
 
 step 2: update name = "utun0"
 
-Second error: 
+error
 ```rust
 Error: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }
 ```
+work with network in macos need run with sudo
 
 step 3: run with sudo
 
@@ -54,10 +59,11 @@ step 3: run with sudo
 sudo cargo run 
 ```
 
-Third error: 
+error: 
 ```rust
 Error: Os { code: 16, kind: ResourceBusy, message: "Resource busy" }
 ```
+utun0 have used by vpn, or something like that
 
 step 4: check utun in device
 
@@ -78,7 +84,7 @@ utun5: flags=8051<UP,POINTOPOINT,RUNNING,MULTICAST> mtu 1380
 	inet6 fe80::e471:f54a:274f:35bd%utun5 prefixlen 64 scopeid 0x16
 ```
 
-step 5: remove name in config
+step 5: remove name in config -> it will create by default
 
 ```rust
 config
@@ -89,7 +95,7 @@ config
     .up(); // Kích hoạt giao diện khi tạo
 ```
 
-step 6: run SUCCESS and check
+step 6: run SUCCESS, then check with cmd
 
 ```bash
 utun6: flags=8051<UP,POINTOPOINT,RUNNING,MULTICAST> mtu 1500
@@ -109,7 +115,27 @@ Request timeout for icmp_seq 3
 
 step 8: add loop and try to ping again
 
-step 9: set up run.sh with visudo
+```rust
+read 84 bytes, flag 4500, proto 54), [45, 0, 0, 54, bd, 86, 0, 0, 40, 1, a9, 21, a, 0, 0, 1, a, 0, 0, 1, 8, 0, f2, 2f, 23, 28, 0, 0, 68, 75, 39, 26, 0, 1, 56, 8, 8, 9, a, b, c, d, e, f, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 1a, 1b, 1c, 1d, 1e, 1f, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 2a, 2b, 2c, 2d, 2e, 2f, 30, 31, 32, 33, 34, 35, 36, 37]
+read 84 bytes, flag 4500, proto 54), [45, 0, 0, 54, b8, 89, 0, 0, 40, 1, ae, 1e, a, 0, 0, 1, a, 0, 0, 1, 8, 0, e6, 87, 23, 28, 0, 1, 68, 75, 39, 27, 0, 1, 61, ae, 8, 9, a, b, c, d, e, f, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 1a, 1b, 1c, 1d, 1e, 1f, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 2a, 2b, 2c, 2d, 2e, 2f, 30, 31, 32, 33, 34, 35, 36, 37]
+```
+
+step 9: set up run.sh with visudo -> it quite buggy -> ignore it
+
+step 10: create alias scgr = `sudo cargo build && sudo cargo run`
+
+step 11: For the first time, I still think I need to parse 4 byte but no, library meh/rust-tun strips it
+
+```rust
+    // still need to read 1504 bytes here, have 4 bytes for address family
+    const MTU: usize = 1500; // maximum transmission unit
+    const UTUN_ADDRESS_FAMILY: usize = 4; // AF_INET (0x02): IPv4 or AF_INET6 (0x1E): IPv6
+    const CHUNK: usize = MTU + UTUN_ADDRESS_FAMILY;
+    let mut buf = [0u8; CHUNK];
+```
+
+step 12: Now we know all data is header + payload of IP, let explore http://www.faqs.org/rfcs/rfc791.html (@see ip-protocol.md)
+
 
 
 
